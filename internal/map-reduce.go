@@ -33,4 +33,6 @@ func MapReduce(inputFile string, nMap, nReduce int, mapf MapFunc, reducef Reduce
 
 	// Return the result
 
+	return ""
+
 }
