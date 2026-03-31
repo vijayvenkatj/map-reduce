@@ -33,3 +33,12 @@ func CreateMaster(params MasterParams) *Master {
 		NReduce: params.NReduce,
 	}
 }
+
+func (m *Master) Task(args *int, reply *Task) error {
+	*reply = Task{
+		ID:     m.ID,
+		Type:   WaitTask,
+		Status: Idle,
+	}
+	return nil
+}

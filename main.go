@@ -28,6 +28,7 @@ func main() {
 	nMap := *nMapArg
 	nReduce := *nReduceArg
 	port := *portArg
+	addr := fmt.Sprintf(":%d", port)
 
 	if nodeType == "master" {
 
@@ -37,8 +38,6 @@ func main() {
 			NReduce: nReduce,
 		}
 		master := internal.CreateMaster(params)
-
-		addr := fmt.Sprintf(":%d", port)
 
 		err := rpc.Register(master)
 		if err != nil {
@@ -59,25 +58,7 @@ func main() {
 	}
 
 	if nodeType == "worker" {
-
 		worker := internal.CreateWorker(id)
-		addr := fmt.Sprintf(":%d", port)
-
-		err := rpc.Register(worker)
-		if err != nil {
-			log.Fatal("rpc register error:", err)
-			return
-		}
-		rpc.HandleHTTP()
-
-		listener, err := net.Listen("tcp", addr)
-		if err != nil {
-			log.Fatal("listen error:", err)
-		}
-
-		log.Println("listening on ", addr)
-		if err = http.Serve(listener, nil); err != nil {
-			log.Fatal("serve error:", err)
-		}
+		worker.Run()
 	}
 }
