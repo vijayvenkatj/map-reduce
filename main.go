@@ -1,34 +1,83 @@
 package main
 
 import (
-	"strconv"
-	"strings"
+	"flag"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
 
 	"github.com/vijayvenkatj/map-reduce/internal"
 )
 
+var (
+	idArg       = flag.Int("id", 1, "node id")
+	nodeTypeArg = flag.String("type", "master", "node type: master or worker")
+	nMapArg     = flag.Int("nMap", 1, "number of map tasks")
+	nReduceArg  = flag.Int("nReduce", 1, "number of reduce tasks")
+	portArg     = flag.Int("port", 8080, "port number")
+)
+
 func main() {
 
-	var mapf internal.MapFunc
-	mapf = func(filename string, contents string) []internal.KeyValue {
-		var kva []internal.KeyValue
+	flag.Parse()
 
-		words := strings.Fields(contents)
+	id := *idArg
+	nodeType := *nodeTypeArg
+	nMap := *nMapArg
+	nReduce := *nReduceArg
+	port := *portArg
 
-		for _, w := range words {
-			kva = append(kva, internal.KeyValue{
-				Key:   w,
-				Value: "1",
-			})
+	if nodeType == "master" {
+
+		params := internal.MasterParams{
+			ID:      id,
+			NMap:    nMap,
+			NReduce: nReduce,
 		}
-		return kva
+		master := internal.CreateMaster(params)
+
+		addr := fmt.Sprintf(":%d", port)
+
+		err := rpc.Register(master)
+		if err != nil {
+			log.Fatal("rpc register error:", err)
+			return
+		}
+		rpc.HandleHTTP()
+
+		listener, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatal("listen error:", err)
+		}
+
+		log.Println("listening on ", addr)
+		if err = http.Serve(listener, nil); err != nil {
+			log.Fatal("serve error:", err)
+		}
 	}
 
-	var reducef internal.ReduceFunc
-	reducef = func(key string, values []string) string {
-		return strconv.Itoa(len(values))
-	}
+	if nodeType == "worker" {
 
-	internal.MapWorker("input.txt", 0, 1, mapf)
-	internal.ReduceWorker(0, 1, reducef)
+		worker := internal.CreateWorker(id)
+		addr := fmt.Sprintf(":%d", port)
+
+		err := rpc.Register(worker)
+		if err != nil {
+			log.Fatal("rpc register error:", err)
+			return
+		}
+		rpc.HandleHTTP()
+
+		listener, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatal("listen error:", err)
+		}
+
+		log.Println("listening on ", addr)
+		if err = http.Serve(listener, nil); err != nil {
+			log.Fatal("serve error:", err)
+		}
+	}
 }
