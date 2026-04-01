@@ -19,7 +19,6 @@ func iHash(str string) int {
 	return int(hash.Sum32() & 0x7FFFFF)
 }
 
-
 /*
 Map takes a file as input and applies user defined mapf to write intermediate file based on partitioning function.
 */
@@ -47,6 +46,7 @@ func Map(fileName string, mapIdx, nReduce int, mapf MapFunc) {
 	}
 
 	for _, kv := range kva {
+		log.Println(kv.Key, nReduce)
 		r := iHash(kv.Key) % nReduce
 		encoders[r].Encode(&kv)
 	}

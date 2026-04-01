@@ -15,7 +15,7 @@ type Worker struct {
 	NReduce int
 }
 
-func CreateWorker(id int, addr string) *Worker {
+func CreateWorker(id int, addr string, nMap, nReduce int) *Worker {
 
 	client, err := rpc.DialHTTP("tcp", addr)
 	if err != nil {
@@ -23,8 +23,10 @@ func CreateWorker(id int, addr string) *Worker {
 	}
 
 	return &Worker{
-		ID:     id,
-		Client: client,
+		ID:      id,
+		Client:  client,
+		NMap:    nMap,
+		NReduce: nReduce,
 	}
 }
 
@@ -36,11 +38,15 @@ func (w *Worker) Run(mapf MapFunc, reducef ReduceFunc) {
 		switch task.Type {
 
 		case MapTask:
-			file := fmt.Sprintf("input-%d.txt", w.ID)
+			file := fmt.Sprintf("input-%d.txt", task.ID)
 			Map(file, task.ID, w.NReduce, mapf)
+			var reply bool
+			w.Client.Call("Master.TaskDone", task, &reply)
 			break
 		case ReduceTask:
 			Reduce(task.ID, w.NMap, reducef)
+			var reply bool
+			w.Client.Call("Master.TaskDone", task, &reply)
 			break
 		case WaitTask:
 			log.Println("No work assigned. Sleeping...(2s)")

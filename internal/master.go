@@ -1,6 +1,10 @@
 package internal
 
+import "sync"
+
 type Master struct {
+	mu sync.Mutex
+
 	MapTasks    []Task
 	ReduceTasks []Task
 
@@ -24,8 +28,8 @@ func CreateMaster(params MasterParams) *Master {
 	}
 	for i := 0; i < params.NReduce; i++ {
 		reduceTask[i] = Task{
-			ID: i,
-			Type: ReduceTask,
+			ID:     i,
+			Type:   ReduceTask,
 			Status: Idle,
 		}
 	}
@@ -42,10 +46,80 @@ func CreateMaster(params MasterParams) *Master {
 }
 
 func (m *Master) Task(args *int, reply *Task) error {
-	*reply = Task{
-		ID:     m.ID,
-		Type:   WaitTask,
-		Status: Idle,
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Check for the phase
+	if m.Phase == "map" {
+		for i := 0; i < m.NMap; i++ {
+			if m.MapTasks[i].Status == Idle {
+				*reply = m.MapTasks[i]
+				return nil
+			}
+		}
+		*reply = Task{
+			ID:     -1,
+			Type:   WaitTask,
+			Status: Idle,
+		}
+		return nil
 	}
+
+	if m.Phase == "reduce" {
+		for i := 0; i < m.NReduce; i++ {
+			if m.ReduceTasks[i].Status == Idle {
+				*reply = m.ReduceTasks[i]
+				return nil
+			}
+		}
+		*reply = Task{
+			ID:     -1,
+			Type:   WaitTask,
+			Status: Idle,
+		}
+		return nil
+	}
+
+	if m.Phase == "completed" {
+		*reply = Task{
+			ID:     -2,
+			Type:   ExitTask,
+			Status: Idle,
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (m *Master) TaskDone(args *Task, reply *bool) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if args.Type == MapTask {
+		m.MapTasks[args.ID].Status = Completed
+
+		for i := 0; i < m.NMap; i++ {
+			if m.MapTasks[i].Status != Completed {
+				*reply = true
+				return nil
+			}
+		}
+		m.Phase = "reduce"
+	}
+
+	if args.Type == ReduceTask {
+		m.ReduceTasks[args.ID].Status = Completed
+		for i := 0; i < m.NReduce; i++ {
+			if m.ReduceTasks[i].Status != Completed {
+				*reply = true
+				return nil
+			}
+		}
+		m.Phase = "completed"
+	}
+
+	*reply = true
 	return nil
 }
