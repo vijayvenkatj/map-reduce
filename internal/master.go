@@ -1,6 +1,8 @@
 package internal
 
-import "sync"
+import (
+	"sync"
+)
 
 type Master struct {
 	mu sync.Mutex
@@ -54,6 +56,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 	if m.Phase == "map" {
 		for i := 0; i < m.NMap; i++ {
 			if m.MapTasks[i].Status == Idle {
+				m.MapTasks[i].Status = InProgress
 				*reply = m.MapTasks[i]
 				return nil
 			}
@@ -69,6 +72,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 	if m.Phase == "reduce" {
 		for i := 0; i < m.NReduce; i++ {
 			if m.ReduceTasks[i].Status == Idle {
+				m.ReduceTasks[i].Status = InProgress
 				*reply = m.ReduceTasks[i]
 				return nil
 			}
