@@ -22,6 +22,13 @@ func CreateMaster(params MasterParams) *Master {
 			Status: Idle,
 		}
 	}
+	for i := 0; i < params.NReduce; i++ {
+		reduceTask[i] = Task{
+			ID: i,
+			Type: ReduceTask,
+			Status: Idle,
+		}
+	}
 
 	return &Master{
 		MapTasks:    mapTask,

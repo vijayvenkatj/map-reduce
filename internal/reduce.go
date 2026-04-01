@@ -6,11 +6,8 @@ import (
 	"os"
 )
 
-func Reduce() {
 
-}
-
-func ReduceWorker(reduceIdx, nMap int, reducef ReduceFunc) {
+func Reduce(reduceIdx, nMap int, reducef ReduceFunc) {
 
 	grouped := Group(reduceIdx, nMap)
 

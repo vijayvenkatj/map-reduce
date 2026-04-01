@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"log"
 	"net/rpc"
 	"time"
@@ -9,11 +10,14 @@ import (
 type Worker struct {
 	ID     int
 	Client *rpc.Client
+
+	NMap    int
+	NReduce int
 }
 
-func CreateWorker(id int) *Worker {
+func CreateWorker(id int, addr string) *Worker {
 
-	client, err := rpc.DialHTTP("tcp", "localhost:8080")
+	client, err := rpc.DialHTTP("tcp", addr)
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
@@ -24,16 +28,19 @@ func CreateWorker(id int) *Worker {
 	}
 }
 
-func (w *Worker) Run() {
+func (w *Worker) Run(mapf MapFunc, reducef ReduceFunc) {
 	for {
 		// Replace with RPC
-		var rpcResult = w.getTask()
-		
-		switch rpcResult.Type {
+		var task = w.getTask()
+
+		switch task.Type {
 
 		case MapTask:
+			file := fmt.Sprintf("input-%d.txt", w.ID)
+			Map(file, task.ID, w.NReduce, mapf)
 			break
 		case ReduceTask:
+			Reduce(task.ID, w.NMap, reducef)
 			break
 		case WaitTask:
 			log.Println("No work assigned. Sleeping...(2s)")

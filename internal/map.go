@@ -19,18 +19,11 @@ func iHash(str string) int {
 	return int(hash.Sum32() & 0x7FFFFF)
 }
 
-/*
-Map function, Takes in filenames, number of Map workers and the user mapf as arguments.
-*/
-
-func Map() {
-	// Take file names
-}
 
 /*
-MapWorker takes a file as input and applies user defined mapf to write intermediate file based on partitioning function.
+Map takes a file as input and applies user defined mapf to write intermediate file based on partitioning function.
 */
-func MapWorker(fileName string, mapIdx, nReduce int, mapf MapFunc) {
+func Map(fileName string, mapIdx, nReduce int, mapf MapFunc) {
 	fileData, err := os.ReadFile(fileName)
 	if err != nil {
 		panic(err)

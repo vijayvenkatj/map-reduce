@@ -12,12 +12,16 @@ import (
 )
 
 var (
-	idArg       = flag.Int("id", 1, "node id")
-	nodeTypeArg = flag.String("type", "master", "node type: master or worker")
-	nMapArg     = flag.Int("nMap", 1, "number of map tasks")
-	nReduceArg  = flag.Int("nReduce", 1, "number of reduce tasks")
-	portArg     = flag.Int("port", 8080, "port number")
+	idArg         = flag.Int("id", 1, "node id")
+	nodeTypeArg   = flag.String("type", "master", "node type: master or worker")
+	nMapArg       = flag.Int("nMap", 1, "number of map tasks")
+	nReduceArg    = flag.Int("nReduce", 1, "number of reduce tasks")
+	portArg       = flag.Int("port", 8080, "port number")
+	masterAddrArg = flag.String("master_addr", "localhost:8080", "address of the master node")
 )
+
+var mapf internal.MapFunc
+var reducef internal.ReduceFunc
 
 func main() {
 
@@ -29,6 +33,7 @@ func main() {
 	nReduce := *nReduceArg
 	port := *portArg
 	addr := fmt.Sprintf(":%d", port)
+	masterAddr := *masterAddrArg
 
 	if nodeType == "master" {
 
@@ -58,7 +63,7 @@ func main() {
 	}
 
 	if nodeType == "worker" {
-		worker := internal.CreateWorker(id)
-		worker.Run()
+		worker := internal.CreateWorker(id, masterAddr)
+		worker.Run(mapf, reducef)
 	}
 }
