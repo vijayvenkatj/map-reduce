@@ -3,9 +3,9 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 )
-
 
 func Reduce(reduceIdx, nMap int, reducef ReduceFunc) {
 
@@ -24,6 +24,8 @@ func Reduce(reduceIdx, nMap int, reducef ReduceFunc) {
 		if err != nil {
 			continue
 		}
+
+		log.Printf("reduced: %v", result)
 	}
 
 	return

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"sync"
 )
 
@@ -58,6 +59,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 			if m.MapTasks[i].Status == Idle {
 				m.MapTasks[i].Status = InProgress
 				*reply = m.MapTasks[i]
+				log.Printf("Granted worker %d, map task %d \n", *args, reply.ID)
 				return nil
 			}
 		}
@@ -66,6 +68,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 			Type:   WaitTask,
 			Status: Idle,
 		}
+		log.Printf("Granted worker idle task\n")
 		return nil
 	}
 
@@ -74,6 +77,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 			if m.ReduceTasks[i].Status == Idle {
 				m.ReduceTasks[i].Status = InProgress
 				*reply = m.ReduceTasks[i]
+				log.Printf("Granted worker %d, reduce task %d \n", *args, reply.ID)
 				return nil
 			}
 		}
@@ -82,6 +86,8 @@ func (m *Master) Task(args *int, reply *Task) error {
 			Type:   WaitTask,
 			Status: Idle,
 		}
+
+		log.Printf("Granted worker idle task\n")
 		return nil
 	}
 
@@ -91,6 +97,7 @@ func (m *Master) Task(args *int, reply *Task) error {
 			Type:   ExitTask,
 			Status: Idle,
 		}
+		log.Printf("Worker asked to shutdown!")
 		return nil
 	}
 
@@ -100,6 +107,8 @@ func (m *Master) Task(args *int, reply *Task) error {
 func (m *Master) TaskDone(args *Task, reply *bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	log.Printf("worker done with task %d \n", args.ID)
 
 	if args.Type == MapTask {
 		m.MapTasks[args.ID].Status = Completed

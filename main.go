@@ -7,10 +7,9 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
-	"strconv"
-	"strings"
 
 	"github.com/vijayvenkatj/map-reduce/internal"
+	"github.com/vijayvenkatj/map-reduce/internal/user"
 )
 
 var (
@@ -34,26 +33,6 @@ func main() {
 	addr := fmt.Sprintf(":%d", port)
 	masterAddr := *masterAddrArg
 
-	var mapf internal.MapFunc
-	mapf = func(filename string, contents string) []internal.KeyValue {
-		var kva []internal.KeyValue
-
-		words := strings.Fields(contents)
-
-		for _, w := range words {
-			kva = append(kva, internal.KeyValue{
-				Key:   w,
-				Value: "1",
-			})
-		}
-		return kva
-	}
-
-	var reducef internal.ReduceFunc
-	reducef = func(key string, values []string) string {
-		return strconv.Itoa(len(values))
-	}
-
 	if nodeType == "master" {
 
 		params := internal.MasterParams{
@@ -75,7 +54,7 @@ func main() {
 			log.Fatal("listen error:", err)
 		}
 
-		log.Println("listening on ", addr)
+		log.Println("listening on", addr)
 		if err = http.Serve(listener, nil); err != nil {
 			log.Fatal("serve error:", err)
 		}
@@ -83,6 +62,6 @@ func main() {
 
 	if nodeType == "worker" {
 		worker := internal.CreateWorker(id, masterAddr, nMap, nReduce)
-		worker.Run(mapf, reducef)
+		worker.Run(user.MapF, user.ReduceF)
 	}
 }

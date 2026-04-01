@@ -49,8 +49,8 @@ func (w *Worker) Run(mapf MapFunc, reducef ReduceFunc) {
 			w.Client.Call("Master.TaskDone", task, &reply)
 			break
 		case WaitTask:
-			log.Println("No work assigned. Sleeping...(2s)")
-			time.Sleep(2 * time.Second)
+			log.Println("No work assigned. Sleeping...(1s)")
+			time.Sleep(1 * time.Second)
 			break
 		case ExitTask:
 			log.Println("Worker has been shut down!")
